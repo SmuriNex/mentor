@@ -14,7 +14,7 @@ func _ready() -> void:
 	version_label.text = "Analisador independente de gestos • v%s" % AppState.app_version
 	info_label.text = AppState.privacy_message
 	developer_toggle.button_pressed = AppState.developer_mode
-	%StartButton.pressed.connect(_open_touch_lab)
+	%StartButton.pressed.connect(_open_calibration_arena)
 	%TouchLabButton.pressed.connect(_open_touch_lab)
 	%TrainingButton.pressed.connect(_show_milestone_message.bind("Treino Livre"))
 	%ResultsButton.pressed.connect(_show_milestone_message.bind("Resultados"))
@@ -25,6 +25,10 @@ func _ready() -> void:
 
 func _open_touch_lab() -> void:
 	get_tree().change_scene_to_file("res://scenes/tests/touch_lab.tscn")
+
+
+func _open_calibration_arena() -> void:
+	get_tree().change_scene_to_file("res://scenes/calibration/calibration_arena.tscn")
 
 
 func _show_milestone_message(feature_name: String) -> void:

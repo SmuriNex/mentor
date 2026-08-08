@@ -1,0 +1,22 @@
+{
+  "version": "arena-v1",
+  "test_type": "VERTICAL_HEADSHOT",
+  "target_distance_mode": "MEDIUM",
+  "target_positions_z": {"NEAR": -3.8, "MEDIUM": -5.8, "FAR": -9.0},
+  "virtual_sensitivity": 100.0,
+  "angular_gain_degrees_at_full_scale": 240.0,
+  "valid_attempts": 10,
+  "minimum_samples": 3,
+  "minimum_drag_length_norm": 0.005,
+  "maximum_duration_ms": 3000.0,
+  "preparing_seconds": 0.45,
+  "result_seconds": 0.85,
+  "ray_distance": 50.0,
+  "ray_collision_mask": 2,
+  "classification": {
+    "perfect_radius_norm": 0.012,
+    "good_radius_norm": 0.030,
+    "vertical_band_norm": 0.035,
+    "lateral_threshold_norm": 0.045
+  }
+}

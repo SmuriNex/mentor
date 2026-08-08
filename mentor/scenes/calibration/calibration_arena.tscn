@@ -1,0 +1,270 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/calibration/calibration_arena.gd" id="1_arena"]
+[ext_resource type="Script" path="res://scripts/calibration/aim_camera_controller.gd" id="2_camera"]
+[ext_resource type="PackedScene" path="res://scenes/calibration/target_dummy.tscn" id="3_dummy"]
+[ext_resource type="Script" path="res://scripts/calibration/calibration_crosshair.gd" id="4_crosshair"]
+[ext_resource type="Script" path="res://scripts/calibration/fire_aim_region.gd" id="5_fire"]
+[ext_resource type="Script" path="res://scripts/calibration/calibration_debug_overlay.gd" id="6_debug"]
+[ext_resource type="Theme" path="res://resources/mentor_theme.tres" id="7_theme"]
+
+[sub_resource type="Environment" id="EnvironmentArena"]
+background_mode = 1
+background_color = Color(0.035, 0.047, 0.066, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.48, 0.57, 0.68, 1)
+ambient_light_energy = 0.62
+tonemap_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="MatGround"]
+albedo_color = Color(0.07, 0.09, 0.12, 1)
+roughness = 0.92
+
+[sub_resource type="PlaneMesh" id="MeshGround"]
+material = SubResource("MatGround")
+size = Vector2(30, 30)
+
+[sub_resource type="BoxShape3D" id="ShapeGround"]
+size = Vector3(30, 0.2, 30)
+
+[node name="CalibrationArena" type="Node3D"]
+script = ExtResource("1_arena")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("EnvironmentArena")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.72, -0.48, 0)
+light_color = Color(0.88, 0.93, 1, 1)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="FillLight" type="OmniLight3D" parent="."]
+position = Vector3(-2.5, 3.5, -5)
+light_color = Color(0.18, 0.56, 0.85, 1)
+light_energy = 2.2
+omni_range = 10.0
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("MeshGround")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+position = Vector3(0, -0.1, 0)
+shape = SubResource("ShapeGround")
+
+[node name="TargetDummy" parent="." instance=ExtResource("3_dummy")]
+position = Vector3(0, 0.62, -5.8)
+
+[node name="PlayerCalibrationRig" type="Node3D" parent="."]
+script = ExtResource("2_camera")
+
+[node name="YawPivot" type="Node3D" parent="PlayerCalibrationRig"]
+
+[node name="PitchPivot" type="Node3D" parent="PlayerCalibrationRig/YawPivot"]
+position = Vector3(0, 1.65, 0)
+
+[node name="Camera3D" type="Camera3D" parent="PlayerCalibrationRig/YawPivot/PitchPivot"]
+position = Vector3(0.32, 0, 3.2)
+current = true
+fov = 70.0
+
+[node name="HUDLayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="HUDLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("7_theme")
+
+[node name="TopMargin" type="MarginContainer" parent="HUDLayer/HUD"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = 72.0
+grow_horizontal = 2
+
+[node name="TopBar" type="HBoxContainer" parent="HUDLayer/HUD/TopMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="BackButton" type="Button" parent="HUDLayer/HUD/TopMargin/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "‹ VOLTAR"
+
+[node name="InstructionLabel" type="Label" parent="HUDLayer/HUD/TopMargin/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.96, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "Preparando mira no peito…"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttemptCounter" type="Label" parent="HUDLayer/HUD/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.34, 0.78, 0.95, 1)
+theme_override_font_sizes/font_size = 18
+text = "Tentativa 1/10"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Crosshair" type="Control" parent="HUDLayer/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_crosshair")
+
+[node name="DebugOverlay" type="Control" parent="HUDLayer/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_debug")
+
+[node name="ResultFeedback" type="Label" parent="HUDLayer/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -96.0
+offset_right = 280.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.77, 0.24, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 38
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MetricsLabel" type="Label" parent="HUDLayer/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -430.0
+offset_top = -115.0
+offset_right = 430.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.89, 0.93, 0.97, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FireRegion" type="Control" parent="HUDLayer/HUD"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 132)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -168.0
+offset_top = -188.0
+offset_right = -36.0
+offset_bottom = -56.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("5_fire")
+
+[node name="DeveloperLabel" type="Label" parent="HUDLayer/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 0
+offset_left = 18.0
+offset_top = 88.0
+offset_right = 500.0
+offset_bottom = 232.0
+theme_override_colors/font_color = Color(0.39, 0.90, 0.64, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "Developer Overlay"
+
+[node name="SummaryPanel" type="PanelContainer" parent="HUDLayer/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -390.0
+offset_top = -245.0
+offset_right = 390.0
+offset_bottom = 245.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SummaryLayout" type="VBoxContainer" parent="HUDLayer/HUD/SummaryPanel"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="SummaryTitle" type="Label" parent="HUDLayer/HUD/SummaryPanel/SummaryLayout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.24, 0.76, 0.94, 1)
+theme_override_font_sizes/font_size = 28
+text = "RESUMO DA CALIBRAÇÃO"
+horizontal_alignment = 1
+
+[node name="SummaryLabel" type="Label" parent="HUDLayer/HUD/SummaryPanel/SummaryLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 17
+text = "Resultados"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SummaryButtons" type="HBoxContainer" parent="HUDLayer/HUD/SummaryPanel/SummaryLayout"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="RestartButton" type="Button" parent="HUDLayer/HUD/SummaryPanel/SummaryLayout/SummaryButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "REPETIR 10 TENTATIVAS"
+
+[node name="SummaryMenuButton" type="Button" parent="HUDLayer/HUD/SummaryPanel/SummaryLayout/SummaryButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "VOLTAR AO MENU"
