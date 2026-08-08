@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0-dev",
+  "general": {
+    "vertical": 0.24,
+    "flick": 0.18,
+    "moving": 0.16,
+    "jump": 0.10,
+    "j_drag": 0.10,
+    "tracking": 0.14,
+    "micro_adjustment": 0.08
+  },
+  "red_dot": {"vertical": 0.30, "flick": 0.25, "tracking": 0.25, "micro_adjustment": 0.20},
+  "scope_2x": {"vertical": 0.25, "tracking": 0.35, "micro_adjustment": 0.40},
+  "scope_4x": {"control": 0.30, "tracking": 0.30, "micro_adjustment": 0.40},
+  "sniper": {"short_flick": 0.25, "precision": 0.35, "micro_adjustment": 0.40},
+  "free_look": {"navigation_speed": 0.50, "navigation_control": 0.50}
+}

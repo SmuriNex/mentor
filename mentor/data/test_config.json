@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0-dev",
+  "warmup_attempts": 5,
+  "valid_attempts": 10,
+  "max_attempts": 18,
+  "minimum_drag_length_norm": 0.005,
+  "maximum_duration_ms": 3000,
+  "head_radius_norm": 0.035,
+  "rest_between_attempts_seconds": 0.65,
+  "sensitivity_step": 16.0,
+  "minimum_step": 2.0,
+  "max_recommendation_change": 24.0,
+  "confidence_thresholds": {"low": 0.45, "medium": 0.70, "high": 0.85}
+}

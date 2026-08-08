@@ -1,0 +1,11 @@
+{
+  "version": "experimental-1",
+  "experimental": true,
+  "enabled": false,
+  "description": "Modelo opcional de laboratório. Não representa o aim assist oficial de nenhum jogo.",
+  "capture_radius_norm": 0.05,
+  "slowdown_factor": 0.60,
+  "attraction_strength": 0.0,
+  "break_speed_norm_s": 1.8,
+  "release_radius_norm": 0.075
+}

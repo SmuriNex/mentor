@@ -1,0 +1,125 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="Theme" path="res://resources/mentor_theme.tres" id="2_theme"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.025, 0.031, 0.043, 1)
+
+[node name="SafeMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Columns" type="HBoxContainer" parent="SafeMargin"]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="Brand" type="VBoxContainer" parent="SafeMargin/Columns"]
+custom_minimum_size = Vector2(440, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+theme_override_constants/separation = 14
+
+[node name="Eyebrow" type="Label" parent="SafeMargin/Columns/Brand"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16, 0.68, 0.86, 1)
+theme_override_font_sizes/font_size = 18
+text = "ANÁLISE DE PERFORMANCE TOUCH"
+
+[node name="TitleLabel" type="Label" parent="SafeMargin/Columns/Brand"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 64
+text = "Mentor"
+
+[node name="Description" type="Label" parent="SafeMargin/Columns/Brand"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Entenda sua velocidade, controle e consistência para encontrar uma faixa de sensibilidade baseada nos seus próprios gestos."
+autowrap_mode = 2
+
+[node name="VersionLabel" type="Label" parent="SafeMargin/Columns/Brand"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.53, 0.62, 1)
+text = "Analisador independente de gestos"
+
+[node name="MenuPanel" type="PanelContainer" parent="SafeMargin/Columns"]
+custom_minimum_size = Vector2(430, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Menu" type="VBoxContainer" parent="SafeMargin/Columns/MenuPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StartButton" type="Button" parent="SafeMargin/Columns/MenuPanel/Menu"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+text = "INICIAR ANÁLISE"
+
+[node name="TouchLabButton" type="Button" parent="SafeMargin/Columns/MenuPanel/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "TOUCH LAB"
+
+[node name="TrainingButton" type="Button" parent="SafeMargin/Columns/MenuPanel/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "TREINO LIVRE"
+
+[node name="ResultsButton" type="Button" parent="SafeMargin/Columns/MenuPanel/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "RESULTADOS"
+
+[node name="HistoryButton" type="Button" parent="SafeMargin/Columns/MenuPanel/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "HISTÓRICO"
+
+[node name="SettingsButton" type="Button" parent="SafeMargin/Columns/MenuPanel/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "CONFIGURAÇÕES"
+
+[node name="DeveloperToggle" type="CheckBox" parent="SafeMargin/Columns/MenuPanel/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Developer Mode"
+
+[node name="InfoLabel" type="Label" parent="SafeMargin/Columns/MenuPanel/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.68, 0.56, 1)
+theme_override_font_sizes/font_size = 14
+text = "Seus testes ficam armazenados apenas neste dispositivo."
+autowrap_mode = 2

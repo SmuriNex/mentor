@@ -1,0 +1,146 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/touch_lab.gd" id="1_lab"]
+[ext_resource type="Script" path="res://scripts/ui/touch_trail_view.gd" id="2_trail"]
+[ext_resource type="Theme" path="res://resources/mentor_theme.tres" id="3_theme"]
+
+[node name="TouchLab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_lab")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.025, 0.031, 0.043, 1)
+
+[node name="SafeMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="SafeMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="SafeMargin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="BackButton" type="Button" parent="SafeMargin/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "‹ VOLTAR"
+
+[node name="AppNameLabel" type="Label" parent="SafeMargin/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.96, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "Mentor • Touch Lab"
+
+[node name="DeveloperLabel" type="Label" parent="SafeMargin/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.37, 0.75, 0.57, 1)
+theme_override_font_sizes/font_size = 13
+text = "FPS"
+vertical_alignment = 1
+
+[node name="Body" type="HBoxContainer" parent="SafeMargin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="TrailPanel" type="PanelContainer" parent="SafeMargin/Layout/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.6
+
+[node name="TrailLayout" type="VBoxContainer" parent="SafeMargin/Layout/Body/TrailPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TrailView" type="Control" parent="SafeMargin/Layout/Body/TrailPanel/TrailLayout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(500, 360)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+clip_contents = true
+script = ExtResource("2_trail")
+
+[node name="LiveLabel" type="Label" parent="SafeMargin/Layout/Body/TrailPanel/TrailLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52, 0.71, 0.82, 1)
+theme_override_font_sizes/font_size = 14
+text = "X/Y —  |  Δ —  |  velocidade —"
+
+[node name="MetricsPanel" type="PanelContainer" parent="SafeMargin/Layout/Body"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MetricsLayout" type="VBoxContainer" parent="SafeMargin/Layout/Body/MetricsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MetricsTitle" type="Label" parent="SafeMargin/Layout/Body/MetricsPanel/MetricsLayout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16, 0.68, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+text = "MÉTRICAS DO GESTO"
+
+[node name="MetricsLabel" type="Label" parent="SafeMargin/Layout/Body/MetricsPanel/MetricsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 15
+text = "DURAÇÃO\n—\n\nDISTÂNCIA\n—\n\nVELOCIDADE\n—"
+
+[node name="Footer" type="HBoxContainer" parent="SafeMargin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StatusLabel" type="Label" parent="SafeMargin/Layout/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.62, 0.68, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "Arraste dentro da área para registrar um gesto."
+vertical_alignment = 1
+
+[node name="ClearButton" type="Button" parent="SafeMargin/Layout/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "LIMPAR"
+
+[node name="AnalyzeButton" type="Button" parent="SafeMargin/Layout/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "ANALISAR"
+
+[node name="SaveButton" type="Button" parent="SafeMargin/Layout/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SALVAR AMOSTRA"

@@ -1,0 +1,18 @@
+{
+  "version": "provisional-linear-1",
+  "provisional": true,
+  "description": "Curva matemática neutra para infraestrutura. Não representa uma curva oficial do Free Fire.",
+  "points": [
+    {"sensitivity": 0, "normalized_gain": 0.0},
+    {"sensitivity": 20, "normalized_gain": 0.1},
+    {"sensitivity": 40, "normalized_gain": 0.2},
+    {"sensitivity": 60, "normalized_gain": 0.3},
+    {"sensitivity": 80, "normalized_gain": 0.4},
+    {"sensitivity": 100, "normalized_gain": 0.5},
+    {"sensitivity": 120, "normalized_gain": 0.6},
+    {"sensitivity": 140, "normalized_gain": 0.7},
+    {"sensitivity": 160, "normalized_gain": 0.8},
+    {"sensitivity": 180, "normalized_gain": 0.9},
+    {"sensitivity": 200, "normalized_gain": 1.0}
+  ]
+}
