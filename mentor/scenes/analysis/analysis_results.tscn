@@ -1,0 +1,149 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/analysis_results.gd" id="1_results"]
+[ext_resource type="Theme" path="res://resources/mentor_theme.tres" id="2_theme"]
+
+[node name="AnalysisResults" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_results")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.025, 0.031, 0.043, 1)
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = 20.0
+offset_right = -28.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Content" type="VBoxContainer" parent="Scroll"]
+custom_minimum_size = Vector2(1180, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Scroll/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.78, 0.96, 1)
+theme_override_font_sizes/font_size = 42
+text = "MENTOR — ANÁLISE CONCLUÍDA"
+horizontal_alignment = 1
+
+[node name="ProfileTitle" type="Label" parent="Scroll/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "PERFIL MOTOR"
+
+[node name="Profile" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Perfil"
+
+[node name="Values" type="HBoxContainer" parent="Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="GeneralPanel" type="PanelContainer" parent="Scroll/Content/Values"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GeneralBox" type="VBoxContainer" parent="Scroll/Content/Values/GeneralPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Scroll/Content/Values/GeneralPanel/GeneralBox"]
+layout_mode = 2
+text = "GERAL"
+horizontal_alignment = 1
+
+[node name="GeneralValue" type="Label" parent="Scroll/Content/Values/GeneralPanel/GeneralBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.82, 0.98, 1)
+theme_override_font_sizes/font_size = 68
+text = "—"
+horizontal_alignment = 1
+
+[node name="GeneralRange" type="Label" parent="Scroll/Content/Values/GeneralPanel/GeneralBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Faixa"
+horizontal_alignment = 1
+
+[node name="RedDotPanel" type="PanelContainer" parent="Scroll/Content/Values"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RedDotBox" type="VBoxContainer" parent="Scroll/Content/Values/RedDotPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Scroll/Content/Values/RedDotPanel/RedDotBox"]
+layout_mode = 2
+text = "PONTO VERMELHO"
+horizontal_alignment = 1
+
+[node name="RedDotValue" type="Label" parent="Scroll/Content/Values/RedDotPanel/RedDotBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.5, 0.42, 1)
+theme_override_font_sizes/font_size = 68
+text = "—"
+horizontal_alignment = 1
+
+[node name="RedDotRange" type="Label" parent="Scroll/Content/Values/RedDotPanel/RedDotBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Faixa"
+horizontal_alignment = 1
+
+[node name="Comparison" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Comparação"
+horizontal_alignment = 1
+
+[node name="Explanation" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Explicação"
+autowrap_mode = 2
+
+[node name="ReasonCodes" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52, 0.62, 0.72, 1)
+text = "Sinais"
+autowrap_mode = 2
+
+[node name="SavedPath" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.72, 0.58, 1)
+text = "Salvo localmente"
+autowrap_mode = 2
+
+[node name="MenuButton" type="Button" parent="Scroll/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+text = "VOLTAR AO MENU"

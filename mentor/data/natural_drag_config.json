@@ -1,0 +1,7 @@
+{
+  "version": "natural-drag-v1",
+  "warmup_attempts": 5,
+  "profile_attempts": 10,
+  "test_type": "NATURAL_DRAG_PROFILE",
+  "warmup_weight": 0.0
+}

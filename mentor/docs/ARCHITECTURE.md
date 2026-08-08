@@ -1,5 +1,11 @@
 # Arquitetura
 
+## Fluxo de análise 0.2
+
+`AnalysisRunner` é o único coordenador de fases. Ele fornece `MentorTestDefinition` à arena, recebe tentativas válidas, agrega candidates e avança por warmup, perfil natural, baseline, coarse/fine/validation de Geral, coarse/fine/validation de Red Dot e resultados. A UI não decide score nem candidate.
+
+O input continua centralizado no `TouchManager`. A arena só roteia cada finger ID para um owner (`JOYSTICK`, `CAMERA_LOOK`, `FIRE_AIM` ou `JUMP`). Movimento do alvo, análise de tracking e busca de sensibilidade são módulos matemáticos separados da cena.
+
 O Mentor separa captura, dados, análise, apresentação e armazenamento.
 
 - `TouchManager`: autoload responsável por finger IDs, timestamps em microssegundos, normalização e ownership.

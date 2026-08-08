@@ -21,6 +21,7 @@ AppState="*res://autoload/app_state.gd"
 SessionManager="*res://autoload/session_manager.gd"
 TouchManager="*res://autoload/touch_manager.gd"
 LocalStorage="*res://autoload/local_storage.gd"
+AnalysisRunner="*res://scripts/runner/mentor_analysis_runner.gd"
 
 [display]
 

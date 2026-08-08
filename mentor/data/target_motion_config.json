@@ -1,0 +1,10 @@
+{
+  "version": "target-motion-v1",
+  "speeds": {
+    "SLOW": 0.75,
+    "MEDIUM": 1.0,
+    "FAST": 1.35
+  },
+  "horizontal_limit": 1.5,
+  "pattern_ids": ["PATTERN_A", "PATTERN_B", "PATTERN_REVERSAL"]
+}

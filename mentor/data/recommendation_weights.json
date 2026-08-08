@@ -1,5 +1,22 @@
 {
   "version": "1.0.0-dev",
+  "scenario_weights": {
+    "MOVING_HEADSHOT": 0.30,
+    "PLAYER_TARGET_MOVING": 0.25,
+    "TRACKING": 0.20,
+    "STATIC_HEADSHOT": 0.10,
+    "REVERSAL": 0.10,
+    "CAMERA_CONTROL": 0.05
+  },
+  "headshot_internal": {
+    "endpoint_accuracy": 0.40,
+    "consistency": 0.20,
+    "time_to_head": 0.10,
+    "overshoot_control": 0.10,
+    "corrections": 0.10,
+    "straightness": 0.05,
+    "stability": 0.05
+  },
   "general": {
     "vertical": 0.24,
     "flick": 0.18,

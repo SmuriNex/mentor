@@ -1,6 +1,6 @@
 {
   "app_name": "Mentor",
-  "app_version": "0.1.0",
-  "algorithm_version": "1.0.0-dev",
+  "app_version": "0.2.0",
+  "algorithm_version": "2.0.0-analysis-v1",
   "privacy_message": "Seus testes ficam armazenados apenas neste dispositivo."
 }

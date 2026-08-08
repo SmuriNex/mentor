@@ -1,7 +1,8 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scripts/calibration/calibration_hit_region.gd" id="1_region"]
 [ext_resource type="Script" path="res://scripts/calibration/target_dummy.gd" id="2_dummy"]
+[ext_resource type="Script" path="res://scripts/targets/target_motion_controller.gd" id="3_motion"]
 
 [sub_resource type="StandardMaterial3D" id="MatHead"]
 albedo_color = Color(0.92, 0.68, 0.46, 1)
@@ -45,6 +46,9 @@ size = Vector3(0.78, 1.05, 0.48)
 
 [node name="TargetDummy" type="Node3D"]
 script = ExtResource("2_dummy")
+
+[node name="MotionController" type="Node" parent="."]
+script = ExtResource("3_motion")
 
 [node name="Visual" type="Node3D" parent="."]
 

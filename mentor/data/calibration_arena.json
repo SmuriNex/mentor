@@ -13,6 +13,7 @@
   "result_seconds": 0.85,
   "ray_distance": 50.0,
   "ray_collision_mask": 2,
+  "tracking_near_chest_radius_norm": 0.035,
   "classification": {
     "perfect_radius_norm": 0.012,
     "good_radius_norm": 0.030,

@@ -43,6 +43,17 @@ func save_touch_sample(attempt: GestureAttempt, metrics: GestureMetrics) -> Stri
 	return file_path
 
 
+func save_analysis_session(payload: Dictionary) -> String:
+	var session_id: String = str(payload.get("session_id", "session_%d" % Time.get_ticks_usec()))
+	var safe_id: String = session_id.replace(":", "-").replace("/", "-").replace("\\", "-")
+	var file_path: String = "%s/%s.json" % [SESSIONS_DIRECTORY, safe_id]
+	var error: Error = _write_json(file_path, payload)
+	if error != OK:
+		push_error("[Mentor][Storage] Falha ao salvar sessão: %s" % error_string(error))
+		return ""
+	return file_path
+
+
 func _read_json(path: String, defaults: Dictionary) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		return defaults.duplicate(true)

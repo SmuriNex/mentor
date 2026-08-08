@@ -17,15 +17,23 @@ enum TargetDistance {
 }
 
 const CONFIG_PATH: String = "res://data/calibration_arena.json"
-const TOUCH_OWNER: StringName = &"FIRE_AIM"
+const FIRE_TOUCH_OWNER: StringName = &"FIRE_AIM"
+const CAMERA_TOUCH_OWNER: StringName = &"CAMERA_LOOK"
+const JOYSTICK_TOUCH_OWNER: StringName = &"JOYSTICK"
+const JUMP_TOUCH_OWNER: StringName = &"JUMP"
 
 @onready var camera_controller: AimCameraController = $PlayerCalibrationRig
 @onready var target_dummy: Node3D = $TargetDummy
+@onready var target_motion: TargetMotionController = $TargetDummy/MotionController
 @onready var head_target: Marker3D = $TargetDummy/HeadTarget
 @onready var chest_target: Marker3D = $TargetDummy/ChestTarget
 @onready var body_target: Marker3D = $TargetDummy/BodyTarget
 @onready var crosshair: CalibrationCrosshair = %Crosshair
 @onready var fire_region: FireAimRegion = %FireRegion
+@onready var camera_look_region: CameraLookRegion = %CameraLookRegion
+@onready var joystick_region: VirtualJoystickRegion = %JoystickRegion
+@onready var red_dot_overlay: RedDotOverlay = %RedDotOverlay
+@onready var jump_region: JumpRegion = %JumpRegion
 @onready var instruction_label: Label = %InstructionLabel
 @onready var attempt_label: Label = %AttemptCounter
 @onready var feedback_label: Label = %ResultFeedback
@@ -34,6 +42,7 @@ const TOUCH_OWNER: StringName = &"FIRE_AIM"
 @onready var debug_overlay: CalibrationDebugOverlay = %DebugOverlay
 @onready var summary_panel: PanelContainer = %SummaryPanel
 @onready var summary_label: Label = %SummaryLabel
+@onready var analysis_progress: ProgressBar = %AnalysisProgress
 
 var state: AttemptState = AttemptState.PREPARING
 var current_region: CalibrationHitRegion.Region = CalibrationHitRegion.Region.NONE
@@ -41,6 +50,9 @@ var virtual_sensitivity: float = 100.0
 var _config: Dictionary = {}
 var _curve: SensitivityCurve
 var _active_finger_id: int = -1
+var _camera_look_finger_id: int = -1
+var _joystick_finger_id: int = -1
+var _jump_finger_id: int = -1
 var _current: CalibrationAttempt
 var _all_attempts: Array[CalibrationAttempt] = []
 var _valid_attempts: Array[CalibrationAttempt] = []
@@ -50,6 +62,7 @@ var _last_touch_position: Vector2 = Vector2.ZERO
 var _last_touch_delta: Vector2 = Vector2.ZERO
 var _last_touch_speed: float = 0.0
 var _last_endpoint_center: Vector2 = Vector2.ZERO
+var _pre_attempt_tracking_samples: Array[TrackingSample] = []
 
 
 func _ready() -> void:
@@ -72,6 +85,7 @@ func _ready() -> void:
 	developer_label.visible = AppState.developer_mode
 	debug_overlay.visible = AppState.developer_mode
 	summary_panel.visible = false
+	analysis_progress.visible = AnalysisRunner.has_active_analysis()
 	metrics_label.text = ""
 	if SessionManager.active_session_id.is_empty():
 		SessionManager.start_session()
@@ -80,16 +94,30 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	if _active_finger_id != -1:
-		TouchManager.release_touch(_active_finger_id, TOUCH_OWNER)
+		TouchManager.release_touch(_active_finger_id, FIRE_TOUCH_OWNER)
+	if _camera_look_finger_id != -1:
+		TouchManager.release_touch(_camera_look_finger_id, CAMERA_TOUCH_OWNER)
+	if _joystick_finger_id != -1:
+		TouchManager.release_touch(_joystick_finger_id, JOYSTICK_TOUCH_OWNER)
+	if _jump_finger_id != -1:
+		TouchManager.release_touch(_jump_finger_id, JUMP_TOUCH_OWNER)
 
 
 func _process(_delta: float) -> void:
 	var now: int = Time.get_ticks_usec()
 	if state == AttemptState.PREPARING and now >= _state_deadline_usec:
 		_set_state(AttemptState.READY)
-		instruction_label.text = "Pressione FIRE e puxe do peito até a cabeça"
+		instruction_label.text = (
+			AnalysisRunner.get_instruction() if AnalysisRunner.has_active_analysis()
+			else "Pressione FIRE e puxe do peito até a cabeça"
+		)
 	elif state == AttemptState.SHOWING_RESULT and now >= _state_deadline_usec:
-		if _valid_attempts.size() >= int(_config.get("valid_attempts", 10)):
+		if AnalysisRunner.current_phase == MentorAnalysisRunner.Phase.RESULTS:
+			_set_state(AttemptState.FINISHED)
+			get_tree().change_scene_to_file("res://scenes/analysis/analysis_results.tscn")
+		elif AnalysisRunner.has_active_analysis():
+			_prepare_next_attempt()
+		elif _valid_attempts.size() >= int(_config.get("valid_attempts", 10)):
 			_finish_session()
 		else:
 			_prepare_next_attempt()
@@ -103,6 +131,8 @@ func _process(_delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	current_region = _query_center_region()
 	crosshair.target_region = current_region
+	if target_motion.running and state in [AttemptState.READY, AttemptState.AIMING]:
+		_record_tracking_sample()
 	if state == AttemptState.AIMING and _current != null \
 	and current_region == CalibrationHitRegion.Region.HEAD:
 		if not _current.entered_head:
@@ -127,8 +157,27 @@ func get_current_target_region() -> CalibrationHitRegion.Region:
 	return current_region
 
 
+func start_target_motion(mode: TargetMotionController.MotionMode) -> void:
+	## Entrada pública usada pelo runner: inicia tracking antes do FIRE e mantém o
+	## mesmo controller ativo durante toda a puxada.
+	target_motion.start_mode(mode)
+	_pre_attempt_tracking_samples.clear()
+	reset_aim_to_chest()
+
+
+func stop_target_motion(reset_position: bool = true) -> void:
+	target_motion.stop(reset_position)
+	_pre_attempt_tracking_samples.clear()
+
+
+func get_target_motion_controller() -> TargetMotionController:
+	return target_motion
+
+
 func _prepare_next_attempt() -> void:
 	_set_state(AttemptState.PREPARING)
+	if AnalysisRunner.has_active_analysis():
+		_apply_runner_test()
 	feedback_label.text = ""
 	metrics_label.text = ""
 	fire_region.active = false
@@ -136,16 +185,55 @@ func _prepare_next_attempt() -> void:
 	debug_overlay.show_endpoint_error = false
 	reset_aim_to_chest()
 	_update_attempt_counter()
-	instruction_label.text = "Preparando mira no peito…"
+	instruction_label.text = (
+		AnalysisRunner.get_instruction() if AnalysisRunner.has_active_analysis()
+		else "Preparando mira no peito…"
+	)
 	_state_deadline_usec = Time.get_ticks_usec() + int(
 		float(_config.get("preparing_seconds", 0.45)) * 1_000_000.0
 	)
 
 
 func _on_touch_started(finger_id: int, sample: TouchSample) -> void:
-	if state != AttemptState.READY or not fire_region.contains_viewport_point(sample.position_px):
+	# Regiões específicas sempre têm prioridade sobre a área ampla de câmera.
+	# Mesmo fora de READY, um toque sobre FIRE nunca é reclassificado como look.
+	if fire_region.contains_viewport_point(sample.position_px):
+		if state == AttemptState.READY and _active_finger_id == -1:
+			_start_fire_aim(finger_id, sample)
 		return
-	if not TouchManager.claim_touch(finger_id, TOUCH_OWNER):
+	if jump_region.contains_viewport_point(sample.position_px):
+		if state in [AttemptState.READY, AttemptState.AIMING] and _jump_finger_id == -1 \
+		and TouchManager.claim_touch(finger_id, JUMP_TOUCH_OWNER):
+			_jump_finger_id = finger_id
+			jump_region.active = true
+			camera_controller.request_jump()
+		return
+	if _is_point_over_priority_button(sample.position_px):
+		return
+
+	if state in [AttemptState.READY, AttemptState.AIMING] \
+	and _joystick_finger_id == -1 \
+	and joystick_region.contains_viewport_point(sample.position_px):
+		if TouchManager.claim_touch(finger_id, JOYSTICK_TOUCH_OWNER):
+			_joystick_finger_id = finger_id
+			joystick_region.begin(sample.position_px)
+			camera_controller.set_movement_input(Vector2.ZERO)
+		return
+
+	if state != AttemptState.READY or _camera_look_finger_id != -1:
+		return
+	if not camera_look_region.contains_viewport_point(sample.position_px):
+		return
+	if not TouchManager.claim_touch(finger_id, CAMERA_TOUCH_OWNER):
+		return
+	_camera_look_finger_id = finger_id
+	_last_touch_position = sample.position_px
+	_last_touch_delta = Vector2.ZERO
+	_last_touch_speed = 0.0
+
+
+func _start_fire_aim(finger_id: int, sample: TouchSample) -> void:
+	if not TouchManager.claim_touch(finger_id, FIRE_TOUCH_OWNER):
 		return
 	_active_finger_id = finger_id
 	fire_region.active = true
@@ -158,10 +246,15 @@ func _on_touch_started(finger_id: int, sample: TouchSample) -> void:
 	_current.gesture.start_zone = &"FIRE"
 	_current.gesture.add_sample(sample)
 	_current.virtual_sensitivity = virtual_sensitivity
+	if AnalysisRunner.has_active_analysis() and AnalysisRunner.current_test != null:
+		_current.test_type = AnalysisRunner.current_test.test_type
 	var rotation_state: Vector2 = camera_controller.get_rotation_state()
 	_current.start_camera_yaw = rotation_state.x
 	_current.start_camera_pitch = rotation_state.y
 	_current.started_target_region = _query_center_region()
+	if target_motion.active_pattern != null:
+		_current.target_pattern_id = target_motion.active_pattern.pattern_id
+	_current.tracking_samples.assign(_pre_attempt_tracking_samples)
 	_last_touch_position = sample.position_px
 	_last_touch_delta = Vector2.ZERO
 	_last_touch_speed = 0.0
@@ -172,6 +265,17 @@ func _on_touch_started(finger_id: int, sample: TouchSample) -> void:
 
 
 func _on_touch_sampled(finger_id: int, sample: TouchSample) -> void:
+	if finger_id == _joystick_finger_id:
+		camera_controller.set_movement_input(joystick_region.update_drag(sample.position_px))
+		return
+
+	if finger_id == _camera_look_finger_id:
+		camera_controller.apply_touch_delta(sample.delta_norm)
+		_last_touch_position = sample.position_px
+		_last_touch_delta = sample.delta_px
+		_last_touch_speed = sample.instant_speed_norm_s
+		return
+
 	if state != AttemptState.AIMING or finger_id != _active_finger_id or _current == null:
 		return
 	_current.gesture.add_sample(sample)
@@ -184,13 +288,34 @@ func _on_touch_sampled(finger_id: int, sample: TouchSample) -> void:
 
 
 func _on_touch_ended(finger_id: int, sample: TouchSample, cancelled: bool) -> void:
+	if finger_id == _jump_finger_id:
+		TouchManager.release_touch(finger_id, JUMP_TOUCH_OWNER)
+		_jump_finger_id = -1
+		jump_region.active = false
+		return
+
+	if finger_id == _joystick_finger_id:
+		TouchManager.release_touch(finger_id, JOYSTICK_TOUCH_OWNER)
+		_joystick_finger_id = -1
+		joystick_region.finish()
+		camera_controller.set_movement_input(Vector2.ZERO)
+		return
+
+	if finger_id == _camera_look_finger_id:
+		TouchManager.release_touch(finger_id, CAMERA_TOUCH_OWNER)
+		_camera_look_finger_id = -1
+		_last_touch_position = sample.position_px
+		_last_touch_delta = Vector2.ZERO
+		_last_touch_speed = 0.0
+		return
+
 	if state != AttemptState.AIMING or finger_id != _active_finger_id or _current == null:
 		return
 	if _current.gesture.samples.is_empty() \
 	or sample.timestamp_usec > _current.gesture.samples[-1].timestamp_usec:
 		_current.gesture.add_sample(sample)
 	_current.gesture.was_cancelled = cancelled
-	TouchManager.release_touch(finger_id, TOUCH_OWNER)
+	TouchManager.release_touch(finger_id, FIRE_TOUCH_OWNER)
 	_active_finger_id = -1
 	fire_region.active = false
 	_finalize_current_attempt(cancelled)
@@ -199,6 +324,10 @@ func _on_touch_ended(finger_id: int, sample: TouchSample, cancelled: bool) -> vo
 func _finalize_current_attempt(cancelled: bool) -> void:
 	_set_state(AttemptState.ANALYZING)
 	_current.metrics = GestureAnalyzer.analyze(_current.gesture)
+	_current.tracking_metrics = TrackingAnalyzer.analyze(
+		_current.tracking_samples,
+		float(_config.get("tracking_near_chest_radius_norm", 0.035))
+	)
 	_validate_gesture(_current.gesture, _current.metrics, cancelled)
 	var rotation_state: Vector2 = camera_controller.get_rotation_state()
 	_current.end_camera_yaw = rotation_state.x
@@ -218,8 +347,11 @@ func _finalize_current_attempt(cancelled: bool) -> void:
 	SessionManager.register_gesture()
 	if _current.classification != CalibrationAttempt.Classification.INVALID:
 		_valid_attempts.append(_current)
+		if AnalysisRunner.has_active_analysis():
+			AnalysisRunner.submit_attempt(_current)
 	_show_attempt_result(_current)
 	_current = null
+	_pre_attempt_tracking_samples.clear()
 	_set_state(AttemptState.SHOWING_RESULT)
 	_state_deadline_usec = Time.get_ticks_usec() + int(
 		float(_config.get("result_seconds", 0.85)) * 1_000_000.0
@@ -285,6 +417,38 @@ func _query_center_region() -> CalibrationHitRegion.Region:
 	return CalibrationHitRegion.Region.NONE
 
 
+func _record_tracking_sample() -> void:
+	var camera: Camera3D = camera_controller.get_camera()
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var center: Vector2 = viewport_size * 0.5
+	var chest_screen: Vector2 = camera.unproject_position(chest_target.global_position)
+	var error_norm: Vector2 = (chest_screen - center) / Vector2(
+		maxf(viewport_size.x, 1.0), maxf(viewport_size.y, 1.0)
+	)
+	var direction_x: float = 0.0
+	if target_motion.active_pattern != null:
+		direction_x = target_motion.active_pattern.direction_at(
+			target_motion.elapsed_seconds,
+			target_motion.loop_pattern
+		).x
+	var sample := TrackingSample.create(Time.get_ticks_usec(), error_norm, direction_x)
+	if state == AttemptState.AIMING and _current != null:
+		_current.tracking_samples.append(sample)
+	else:
+		_pre_attempt_tracking_samples.append(sample)
+		# Limita o pre-roll a dois segundos a 120 Hz, evitando crescimento sem fim.
+		if _pre_attempt_tracking_samples.size() > 240:
+			_pre_attempt_tracking_samples.pop_front()
+
+
+func _is_point_over_priority_button(point: Vector2) -> bool:
+	var buttons: Array[BaseButton] = [%BackButton, %RestartButton, %SummaryMenuButton]
+	for button: BaseButton in buttons:
+		if button.visible and button.get_global_rect().has_point(point):
+			return true
+	return false
+
+
 func _update_projected_head() -> void:
 	var camera: Camera3D = camera_controller.get_camera()
 	if camera == null or not camera.is_inside_tree():
@@ -298,6 +462,12 @@ func _update_projected_head() -> void:
 
 
 func _show_attempt_result(attempt: CalibrationAttempt) -> void:
+	if AnalysisRunner.has_active_analysis() \
+	or AnalysisRunner.current_phase == MentorAnalysisRunner.Phase.RESULTS:
+		feedback_label.text = "TENTATIVA REGISTRADA"
+		metrics_label.text = ""
+		_update_attempt_counter()
+		return
 	var feedbacks: Dictionary = {
 		CalibrationAttempt.Classification.INVALID: "VAMOS TENTAR NOVAMENTE",
 		CalibrationAttempt.Classification.PERFECT: "PERFEITO",
@@ -373,12 +543,24 @@ func _update_developer_overlay() -> void:
 	var endpoint_error: Vector2 = Vector2.ZERO
 	if not _all_attempts.is_empty():
 		endpoint_error = _all_attempts[-1].endpoint_error_norm
+	var runner_debug: String = ""
+	if AnalysisRunner.has_active_analysis():
+		var pattern_name: String = "STATIONARY"
+		if target_motion.active_pattern != null:
+			pattern_name = String(target_motion.active_pattern.pattern_id)
+		var tracking_error: Vector2 = Vector2.ZERO
+		if not _pre_attempt_tracking_samples.is_empty():
+			tracking_error = _pre_attempt_tracking_samples[-1].error_norm
+		runner_debug = "\nphase %s | test %s | candidate %d | pattern %s | track %s" % [
+			AnalysisRunner.get_phase_name(), String(AnalysisRunner.current_test.test_type),
+			AnalysisRunner.candidate_sensitivity, pattern_name, tracking_error]
 	developer_label.text = (
 		"FPS %d | viewport %dx%d | DPI %.0f | fingers %s\n" % [
 			Engine.get_frames_per_second(), int(viewport_size.x), int(viewport_size.y),
 			_valid_screen_dpi(), str(TouchManager.get_active_finger_ids())]
-		+ "aim finger %d | pos %s | delta %s | speed %.3f\n" % [
-			_active_finger_id, _last_touch_position.round(), _last_touch_delta.round(), _last_touch_speed]
+		+ "fire %d | look %d | stick %d | jump %d | pos %s | delta %s | speed %.3f\n" % [
+			_active_finger_id, _camera_look_finger_id, _joystick_finger_id, _jump_finger_id, _last_touch_position.round(),
+			_last_touch_delta.round(), _last_touch_speed]
 		+ "sensi %.0f | curve %.3f | angular %.2f rad/screen\n" % [
 			virtual_sensitivity, camera_controller.curve_gain,
 			camera_controller.angular_gain_rad_per_screen]
@@ -389,10 +571,16 @@ func _update_developer_overlay() -> void:
 		+ "head %s | endpoint error %s" % [
 			camera_controller.get_camera().unproject_position(head_target.global_position).round(),
 			endpoint_error]
+		+ runner_debug
 	)
 
 
 func _update_attempt_counter() -> void:
+	if AnalysisRunner.has_active_analysis():
+		attempt_label.text = "%s  •  %.0f%%" % [
+			AnalysisRunner.get_step_label(), AnalysisRunner.progress * 100.0]
+		analysis_progress.value = AnalysisRunner.progress * 100.0
+		return
 	attempt_label.text = "Tentativa %d/%d" % [
 		mini(_valid_attempts.size() + 1, int(_config.get("valid_attempts", 10))),
 		int(_config.get("valid_attempts", 10)),
@@ -407,14 +595,47 @@ func _restart_session() -> void:
 	_all_attempts.clear()
 	_valid_attempts.clear()
 	summary_panel.visible = false
-	SessionManager.start_session()
+	if AnalysisRunner.current_phase != MentorAnalysisRunner.Phase.INTRO:
+		AnalysisRunner.begin_analysis(AnalysisRunner.current_general, AnalysisRunner.current_red_dot)
+	else:
+		SessionManager.start_session()
 	_prepare_next_attempt()
 
 
 func _go_back() -> void:
 	if _active_finger_id != -1:
-		TouchManager.release_touch(_active_finger_id, TOUCH_OWNER)
+		TouchManager.release_touch(_active_finger_id, FIRE_TOUCH_OWNER)
+	if _camera_look_finger_id != -1:
+		TouchManager.release_touch(_camera_look_finger_id, CAMERA_TOUCH_OWNER)
+	if _joystick_finger_id != -1:
+		TouchManager.release_touch(_joystick_finger_id, JOYSTICK_TOUCH_OWNER)
+	if _jump_finger_id != -1:
+		TouchManager.release_touch(_jump_finger_id, JUMP_TOUCH_OWNER)
+	if AnalysisRunner.has_active_analysis():
+		AnalysisRunner.cancel_analysis()
 	get_tree().change_scene_to_file("res://scenes/menu/main_menu.tscn")
+
+
+func _apply_runner_test() -> void:
+	var definition: MentorTestDefinition = AnalysisRunner.current_test
+	if definition == null:
+		return
+	virtual_sensitivity = float(definition.candidate_sensitivity)
+	camera_controller.configure_sensitivity(
+		virtual_sensitivity,
+		_curve,
+		float(_config.get("angular_gain_degrees_at_full_scale", 240.0))
+	)
+	camera_controller.reset_player_translation()
+	stop_target_motion(true)
+	if definition.target_motion != TargetMotionController.MotionMode.STATIONARY:
+		target_motion.start_mode(definition.target_motion)
+		_pre_attempt_tracking_samples.clear()
+	var is_red_dot: bool = definition.scope_mode == &"RED_DOT"
+	camera_controller.set_scope_mode(is_red_dot)
+	red_dot_overlay.visible = is_red_dot
+	analysis_progress.visible = true
+	analysis_progress.value = AnalysisRunner.progress * 100.0
 
 
 func _load_config() -> Dictionary:

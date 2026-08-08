@@ -1,0 +1,9 @@
+{
+  "version": "analysis-flow-v1",
+  "warmup_attempts": 5,
+  "natural_profile_attempts": 10,
+  "baseline_attempts": 5,
+  "attempts_per_candidate": 3,
+  "validation_attempts": 4,
+  "validation_max_retries": 1
+}

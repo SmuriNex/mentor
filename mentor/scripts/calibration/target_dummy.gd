@@ -1,12 +1,15 @@
 class_name TargetDummy
 extends Node3D
 
-## Preparação mínima para etapas futuras. A Arena V1 usa STATIONARY; STRAFE é
-## apenas um modo declarado e não executa IA ou movimento nesta fase.
+## O visual, as áreas de colisão e os Markers permanecem filhos deste nó. Assim,
+## todos acompanham automaticamente a trajetória aplicada pelo controller.
 
-enum MotionMode {
-	STATIONARY,
-	STRAFE,
-}
+@onready var motion_controller: TargetMotionController = $MotionController
 
-@export var motion_mode: MotionMode = MotionMode.STATIONARY
+
+func start_motion(mode: TargetMotionController.MotionMode) -> void:
+	motion_controller.start_mode(mode)
+
+
+func stop_motion(reset_position: bool = true) -> void:
+	motion_controller.stop(reset_position)

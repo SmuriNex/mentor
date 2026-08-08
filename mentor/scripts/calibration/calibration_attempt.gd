@@ -35,6 +35,9 @@ var endpoint_error_length_px: float = 0.0
 var endpoint_error_length_norm: float = 0.0
 var time_to_head_ms: float = -1.0
 var classification: Classification = Classification.INVALID
+var target_pattern_id: StringName = &"STATIONARY"
+var tracking_samples: Array[TrackingSample] = []
+var tracking_metrics: TrackingMetrics
 
 
 func classification_name() -> String:
@@ -42,7 +45,7 @@ func classification_name() -> String:
 
 
 func to_dictionary(include_raw_samples: bool = true) -> Dictionary:
-	return {
+	var result: Dictionary = {
 		"test_type": String(test_type),
 		"virtual_sensitivity": virtual_sensitivity,
 		"start_camera_yaw": start_camera_yaw,
@@ -61,6 +64,14 @@ func to_dictionary(include_raw_samples: bool = true) -> Dictionary:
 		"endpoint_error_length_px": endpoint_error_length_px,
 		"endpoint_error_length_norm": endpoint_error_length_norm,
 		"classification": classification_name(),
+		"target_pattern_id": String(target_pattern_id),
+		"tracking_metrics": tracking_metrics.to_dictionary() if tracking_metrics != null else {},
 		"gesture": gesture.to_dictionary(include_raw_samples) if gesture != null else {},
 		"metrics": metrics.to_dictionary() if metrics != null else {},
 	}
+	if include_raw_samples:
+		var raw_tracking: Array[Dictionary] = []
+		for sample: TrackingSample in tracking_samples:
+			raw_tracking.append(sample.to_dictionary())
+		result["tracking_samples"] = raw_tracking
+	return result

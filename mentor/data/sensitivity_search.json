@@ -1,0 +1,14 @@
+{
+  "version": "adaptive-search-v1",
+  "general_coarse": [50, 90, 130, 170, 200],
+  "red_dot_coarse": [40, 80, 120, 160, 200],
+  "current_offsets": [-30, -15, 0, 15, 30],
+  "coarse_attempts_per_scenario": 3,
+  "early_elimination_min_attempts": 3,
+  "extreme_miss_rate": 0.9,
+  "extreme_endpoint_error": 0.11,
+  "fine_step": 5,
+  "minimum_fine_step": 2,
+  "equivalent_score_tolerance": 0.035,
+  "validation_min_score_ratio": 0.9
+}

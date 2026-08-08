@@ -28,7 +28,7 @@ func _open_touch_lab() -> void:
 
 
 func _open_calibration_arena() -> void:
-	get_tree().change_scene_to_file("res://scenes/calibration/calibration_arena.tscn")
+	get_tree().change_scene_to_file("res://scenes/analysis/analysis_setup.tscn")
 
 
 func _show_milestone_message(feature_name: String) -> void:

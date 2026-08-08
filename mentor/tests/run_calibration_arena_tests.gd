@@ -25,6 +25,9 @@ func _run() -> void:
 	_test_classifier_boundaries()
 	_test_motor_speed_and_correction()
 	_test_ten_attempt_summary()
+	await _test_camera_look_flow(arena)
+	await _test_moving_target_tracking(arena)
+	await _test_moving_fire_flow(arena)
 	await _test_fire_aim_flow(arena)
 
 	arena.queue_free()
@@ -160,7 +163,7 @@ func _test_fire_aim_flow(arena: Node) -> void:
 	_send_touch(true, 22, Vector2(20.0, 300.0))
 	await process_frame
 	_expect(int(arena.get("state")) == STATE_READY, "toque fora do FIRE não pode iniciar tentativa")
-	_expect(TouchManagerProxy.owner(_touch_manager, 22) == &"", "toque externo não pode receber ownership")
+	_expect(TouchManagerProxy.owner(_touch_manager, 22) == &"JOYSTICK", "metade esquerda deve pertencer ao joystick")
 	_send_touch(false, 22, Vector2(20.0, 300.0))
 	_send_touch(true, 23, start)
 	await process_frame
@@ -216,6 +219,83 @@ func _test_fire_aim_flow(arena: Node) -> void:
 	_expect(int(arena.get("state")) == STATE_FINISHED, "dez tentativas devem finalizar a sessão")
 	var summary_panel: PanelContainer = arena.get_node("HUDLayer/HUD/SummaryPanel") as PanelContainer
 	_expect(summary_panel.visible, "sessão finalizada deve mostrar painel de resumo")
+
+
+func _test_camera_look_flow(arena: Node) -> void:
+	arena.call("reset_aim_to_chest")
+	arena.call("_set_state", STATE_READY)
+	var camera_controller: AimCameraController = arena.get_node("PlayerCalibrationRig") as AimCameraController
+	var before: Vector2 = camera_controller.get_rotation_state()
+	var viewport_size: Vector2 = arena.get_viewport().get_visible_rect().size
+	var start := Vector2(viewport_size.x * 0.72, viewport_size.y * 0.42)
+	_send_touch(true, 18, start)
+	await process_frame
+	_expect(TouchManagerProxy.owner(_touch_manager, 18) == &"CAMERA_LOOK", "lado direito livre deve receber CAMERA_LOOK")
+	_expect(int(arena.get("state")) == STATE_READY, "CAMERA_LOOK não pode iniciar uma tentativa")
+	_send_drag(18, start + Vector2(80.0, -45.0), Vector2(80.0, -45.0))
+	await process_frame
+	var after: Vector2 = camera_controller.get_rotation_state()
+	_expect(not after.is_equal_approx(before), "CAMERA_LOOK deve alterar yaw/pitch sem FIRE")
+	var attempts: Array = arena.get("_all_attempts") as Array
+	_expect(attempts.is_empty(), "CAMERA_LOOK não pode criar CalibrationAttempt")
+	_send_touch(false, 18, start + Vector2(80.0, -45.0))
+	await process_frame
+	_expect(TouchManagerProxy.owner(_touch_manager, 18) == &"", "release deve liberar CAMERA_LOOK")
+	_expect(not TouchManagerProxy.active(_touch_manager, 18), "finger de câmera deve ser removido")
+
+
+func _test_moving_target_tracking(arena: Node) -> void:
+	arena.call("_set_state", STATE_READY)
+	arena.call("start_target_motion", TargetMotionController.MotionMode.STRAFE_CONTINUOUS)
+	var target: Node3D = arena.get_node("TargetDummy") as Node3D
+	var head: Marker3D = arena.get_node("TargetDummy/HeadTarget") as Marker3D
+	var controller: TargetMotionController = arena.call("get_target_motion_controller") as TargetMotionController
+	var start_x: float = target.global_position.x
+	controller.seek(0.5)
+	_expect(not is_equal_approx(target.global_position.x, start_x), "alvo móvel deve alterar posição lateral")
+	_expect(head.global_position.is_equal_approx(target.global_position + head.position), "HeadTarget móvel deve acompanhar o dummy")
+	arena.call("point_aim_at", head)
+	await physics_frame
+	_expect_region(int(arena.call("get_current_target_region")), CalibrationHitRegion.Region.HEAD, "raycast deve usar posição atual da cabeça")
+	var before_samples: int = (arena.get("_pre_attempt_tracking_samples") as Array).size()
+	await physics_frame
+	_expect((arena.get("_pre_attempt_tracking_samples") as Array).size() > before_samples, "tracking deve amostrar alvo antes do FIRE")
+	arena.call("stop_target_motion", true)
+	arena.call("reset_aim_to_chest")
+
+
+func _test_moving_fire_flow(arena: Node) -> void:
+	arena.call("_set_state", STATE_READY)
+	arena.call("start_target_motion", TargetMotionController.MotionMode.STRAFE_CONTINUOUS)
+	var controller: TargetMotionController = arena.call("get_target_motion_controller") as TargetMotionController
+	var target: Node3D = arena.get_node("TargetDummy") as Node3D
+	var fire: FireAimRegion = arena.get_node("HUDLayer/HUD/FireRegion") as FireAimRegion
+	var start: Vector2 = fire.global_position + fire.size * 0.5
+	_send_touch(true, 19, start)
+	await physics_frame
+	_expect(int(arena.get("state")) == STATE_AIMING, "FIRE móvel deve iniciar AIMING")
+	_expect(controller.running, "FIRE não pode pausar TargetMotionController")
+	var x_during_press: float = target.global_position.x
+	for _frame: int in range(4):
+		await physics_frame
+	_expect(not is_equal_approx(target.global_position.x, x_during_press), "alvo deve continuar andando durante FIRE")
+	_send_drag(19, start + Vector2(12.0, -24.0), Vector2(12.0, -24.0))
+	await physics_frame
+	_send_touch(false, 19, start + Vector2(12.0, -24.0))
+	await process_frame
+	var attempts: Array = arena.get("_all_attempts") as Array
+	_expect(attempts.size() == 1, "tentativa móvel deve ser finalizada")
+	if attempts.size() == 1:
+		var attempt: CalibrationAttempt = attempts[0] as CalibrationAttempt
+		_expect(attempt.target_pattern_id == &"STRAFE_CONTINUOUS", "attempt deve guardar pattern móvel")
+		_expect(attempt.tracking_metrics != null, "attempt móvel deve calcular TrackingMetrics")
+		_expect(attempt.tracking_samples.size() > 1, "attempt móvel deve preservar tracking antes/durante FIRE")
+	_expect(controller.running, "alvo deve permanecer ativo após soltar FIRE")
+	arena.call("stop_target_motion", true)
+	(arena.get("_all_attempts") as Array).clear()
+	(arena.get("_valid_attempts") as Array).clear()
+	arena.call("reset_aim_to_chest")
+	arena.call("_set_state", STATE_READY)
 
 
 func _perform_mouse_attempt(arena: Node, fire: FireAimRegion, start: Vector2) -> void:
